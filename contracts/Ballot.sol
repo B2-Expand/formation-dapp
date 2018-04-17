@@ -1,6 +1,7 @@
 pragma solidity ^0.4.20;
 
 import "./IShipRegistery.sol";
+import "./INexium.sol";
 
 contract Ballot {
     
@@ -13,7 +14,8 @@ contract Ballot {
     uint8 CHANGE_WEAPONPRICE = 6;
     
     
-    IShipRegistery public  shipRegistery;
+    IShipRegistery public shipRegistery;
+    INexium public nexium;
     uint32 public proposalTime = 1 weeks;
     mapping(uint256 => Proposal) public proposals;
     mapping(uint256 => mapping(address => bool)) voted; // Peut tout de même être vu !
@@ -38,20 +40,23 @@ contract Ballot {
         bool resultApplied;
     }
     
-    function Ballot(address shipRegisteryAddress) public {
+    function Ballot(address shipRegisteryAddress, address nexiumAddress) public {
         shipRegistery = IShipRegistery(shipRegisteryAddress);
+        nexium = INexium(nexiumAddress);
     }
     
     function resolveProposal(uint256 proposalId) public {
         Proposal storage prop = proposals[proposalId];
         require(prop.proposer != 0x0 && !prop.resultApplied && now > prop.endDate);
         if (prop.votesFor > prop.votesAgainst){
+            nexium.transfer(prop.proposer, nexium.balanceOf(this) / 2);
             if(prop.propType == ERROR_PROPOSAL)
                 revert();
             else if (prop.propType == CHANGE_SHIPREGISTERY){
                 shipRegistery = IShipRegistery(address(prop.extraData));
             } else if (prop.propType == CHANGE_BALLOT){
                 shipRegistery.changeAdmin(address(prop.extraData));
+                nexium.transfer(address(prop.extraData), nexium.balanceOf(this)/2);
             } else if (prop.propType == CHANGE_PROPOSALTIME){
                 proposalTime = uint32(prop.extraData);
             } else if (prop.propType == CHANGE_GAMERESOLVER){
