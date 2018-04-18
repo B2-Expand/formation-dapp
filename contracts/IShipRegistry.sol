@@ -1,16 +1,16 @@
-pragma solidity ^0.4.20;
+pragma solidity ^0.4.19;
 
 import "./GameResolver.sol";
 import "./INexium.sol";
 
 
-contract IShipRegistery {
+contract IShipRegistry {
     
     address public administrator;
     GameResolver public gameResolver;
     uint16 public weaponCount;
     uint256 public weaponPrice;
-    INexium nexium;
+    INexium public nexium;
     
     
     struct Weapon {
@@ -29,7 +29,6 @@ contract IShipRegistery {
     mapping (address => Ship) public ships;
     mapping (address => mapping (uint16 => bool)) public unlockedWeapons;
     
-    function ShipRegistery(address nexiumAddress) public;
     function changeAdmin(address newAdmin) public;
     function addWeapon(string name, bytes32 pictureHash, uint8[] efficiencies) public;
     function setWeaponsPrice(uint256 price) public;

@@ -1,12 +1,12 @@
-pragma solidity ^0.4.20;
+pragma solidity ^0.4.19;
 
-import "./IShipRegistery.sol";
+import "./IShipRegistry.sol";
 import "./INexium.sol";
 
 contract Ballot {
     
     uint8 ERROR_PROPOSAL = 0;
-    uint8 CHANGE_SHIPREGISTERY = 1;
+    uint8 CHANGE_SHIPRegistry = 1;
     uint8 CHANGE_BALLOT = 2;
     uint8 CHANGE_PROPOSALTIME = 3;
     uint8 CHANGE_GAMERESOLVER = 4;
@@ -14,7 +14,7 @@ contract Ballot {
     uint8 CHANGE_WEAPONPRICE = 6;
     
     
-    IShipRegistery public shipRegistery;
+    IShipRegistry public shipRegistry;
     INexium public nexium;
     uint32 public proposalTime = 1 weeks;
     mapping(uint256 => Proposal) public proposals;
@@ -40,8 +40,8 @@ contract Ballot {
         bool resultApplied;
     }
     
-    function Ballot(address shipRegisteryAddress, address nexiumAddress) public {
-        shipRegistery = IShipRegistery(shipRegisteryAddress);
+    function Ballot(address shipRegistryAddress, address nexiumAddress) public {
+        shipRegistry = IShipRegistry(shipRegistryAddress);
         nexium = INexium(nexiumAddress);
     }
     
@@ -52,15 +52,20 @@ contract Ballot {
             nexium.transfer(prop.proposer, nexium.balanceOf(this) / 2);
             if(prop.propType == ERROR_PROPOSAL)
                 revert();
-            else if (prop.propType == CHANGE_SHIPREGISTERY){
-                shipRegistery = IShipRegistery(address(prop.extraData));
+                
+            else if (prop.propType == CHANGE_SHIPRegistry){
+                shipRegistry = IShipRegistry(address(prop.extraData));
+                
             } else if (prop.propType == CHANGE_BALLOT){
-                shipRegistery.changeAdmin(address(prop.extraData));
+                shipRegistry.changeAdmin(address(prop.extraData));
                 nexium.transfer(address(prop.extraData), nexium.balanceOf(this)/2);
+                
             } else if (prop.propType == CHANGE_PROPOSALTIME){
                 proposalTime = uint32(prop.extraData);
+                
             } else if (prop.propType == CHANGE_GAMERESOLVER){
-                shipRegistery.setGameResolver(address(prop.extraData));
+                shipRegistry.setGameResolver(address(prop.extraData));
+                
             } else if (prop.propType == NEW_WEAPON){
                 Weapon memory weapon = proposedWeapons[uint256(prop.extraData)];
                 uint8[] memory efficiencies = new uint8[](weapon.efficiencies.length);
@@ -68,9 +73,9 @@ contract Ballot {
                 for(i; i< weapon.efficiencies.length; i++){
                     efficiencies[i] = uint8(weapon.efficiencies[i]);
                 }
-                shipRegistery.addWeapon(weapon.name, weapon.pictureHash, efficiencies);
+                shipRegistry.addWeapon(weapon.name, weapon.pictureHash, efficiencies);
             } else if (prop.propType == CHANGE_WEAPONPRICE){
-                shipRegistery.setWeaponsPrice(uint256(prop.extraData));
+                shipRegistry.setWeaponsPrice(uint256(prop.extraData));
             } else revert();
         } else {
             prop.resultApplied = true;
@@ -78,7 +83,7 @@ contract Ballot {
     }
     
     function propose(uint8 propType, string quickDesc, bytes32 extraData) public{
-        require(shipRegistery.getLevel(msg.sender) >= 10);
+        require(shipRegistry.getLevel(msg.sender) >= 10);
         
         proposals[proposalAmount] = 
             Proposal(
@@ -101,7 +106,7 @@ contract Ballot {
     
     function vote(uint256 proposalId, bool agree) public {
         Proposal storage prop = proposals[proposalId];
-        require (shipRegistery.getLevel(msg.sender) >= 10 && now < prop.endDate && !voted[proposalId][msg.sender]);
+        require (shipRegistry.getLevel(msg.sender) >= 10 && now < prop.endDate && !voted[proposalId][msg.sender]);
         voted[proposalId][msg.sender] = true;
         if(agree) prop.votesFor++;
         else prop.votesAgainst++;

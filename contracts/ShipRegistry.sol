@@ -1,17 +1,17 @@
-pragma solidity ^0.4.20;
+pragma solidity ^0.4.19;
 
 import "./GameResolver.sol";
 import "./INexium.sol";
-import "./IShipRegistery.sol";
+import "./IShipRegistry.sol";
 
 
-contract ShipRegistery is IShipRegistery {
+contract ShipRegistry is IShipRegistry {
     
     address public administrator;
     GameResolver public gameResolver;
     uint16 public weaponCount;
     uint256 public weaponPrice = 10000;
-    INexium nexium;
+    INexium public nexium;
     
     
     mapping (uint16 => Weapon) public weapons;
@@ -19,7 +19,7 @@ contract ShipRegistery is IShipRegistery {
     mapping (address => Ship) public ships;
     mapping (address => mapping (uint16 => bool)) public unlockedWeapons;
     
-    function ShipRegistery(address nexiumAddress) public {
+    function ShipRegistry(address nexiumAddress) public {
         administrator = msg.sender;
         nexium = INexium(nexiumAddress);
     }
@@ -37,6 +37,8 @@ contract ShipRegistery is IShipRegistery {
     
     function addWeapon(string name, bytes32 pictureHash, uint8[] efficiencies) public
     adminFunction(){
+        require(efficiencies.length == weaponCount + 1);
+        require(efficiencies[weaponCount] == 1);
         weapons[weaponCount] = Weapon(pictureHash, name);
         for (uint16 i; i < efficiencies.length; i++){
             weaponEfficiencies[i][weaponCount] = 2 - efficiencies[i];
@@ -76,6 +78,4 @@ contract ShipRegistery is IShipRegistery {
     function getLevel(address user) public view returns(uint8 level){
         return ships[user].level;
     }
-    
-
 }
